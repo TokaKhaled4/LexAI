@@ -27,7 +27,7 @@ _client: Groq | None = None
 def _get_client() -> Groq:
     global _client
     if _client is None:
-        api_key = "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"
+        api_key = "your_api_key"
         _client = Groq(api_key=api_key)
     return _client
 
