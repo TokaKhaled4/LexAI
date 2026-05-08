@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>LexAI</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚖️</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:            #f7f4ef;
+    --surface:       #ffffff;
+    --surface2:      #f0ede8;
+    --border:        rgba(0,0,0,0.08);
+    --border2:       rgba(0,0,0,0.14);
+    --text:          #1a1714;
+    --muted:         #8a8480;
+    --accent:        #b5601a;
+    --accent-dim:    rgba(181,96,26,0.08);
+    --accent-border: rgba(181,96,26,0.25);
+    --green:         #2d7a4f;
+    --green-bg:      #edf7f2;
+    --red:           #b83030;
+    --red-bg:        #fdf0f0;
+    --amber:         #b87c10;
+    --amber-bg:      #fdf6e8;
+    --radius:        14px;
+
+    /* model colours */
+    --qwen:          #5b4fcf;
+    --qwen-bg:       rgba(91,79,207,0.08);
+    --qwen-border:   rgba(91,79,207,0.25);
+    --llama:         #1a7a5e;
+    --llama-bg:      rgba(26,122,94,0.08);
+    --llama-border:  rgba(26,122,94,0.25);
+  }
+
+  html, body {
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .shell { max-width: 740px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ── Header ── */
+  header {
+    padding: 48px 0 36px;
+    border-bottom: 1px solid var(--border2);
+    margin-bottom: 32px;
+    animation: fadeDown 0.5s ease both;
+  }
+  .logo {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 32px;
+    letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); display: inline-block; margin-bottom: 2px; }
+  .tagline  { font-size: 11px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 6px; }
+
+  /* ── Cards ── */
+  .stack { display: flex; flex-direction: column; gap: 16px; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 22px 24px;
+    animation: fadeUp 0.45s ease both;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--border2);
+    border-radius: 3px 0 0 3px;
+  }
+  .card.active::before { background: var(--accent); }
+  .card.done::before   { background: var(--green); }
+  .card:nth-child(2)   { animation-delay: 0.07s; }
+  .card:nth-child(3)   { animation-delay: 0.14s; }
+
+  .card-title { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 14px; }
+
+  /* ── Inputs ── */
+  input[type=text] {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    padding: 10px 14px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  input[type=text]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+  input[type=text]::placeholder { color: var(--muted); }
+  .query-input { font-family: 'Playfair Display', Georgia, serif !important; font-size: 16px !important; padding: 14px 16px !important; }
+  .query-input::placeholder { font-style: italic; }
+
+  /* ── Buttons ── */
+  .btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: 1px solid var(--border2);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .btn:hover   { background: var(--surface2); }
+  .btn:active  { transform: scale(0.98); }
+  .btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn.primary:hover { opacity: 0.88; }
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+  .row { display: flex; gap: 8px; align-items: stretch; }
+  .row input { flex: 1; }
+
+  /* ── Status pills ── */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 12px;
+    border-radius: 8px;
+    font-size: 11px;
+    margin-top: 10px;
+    border: 1px solid transparent;
+    transition: all 0.3s;
+  }
+  .pill.idle  { background: var(--surface2); color: var(--muted); border-color: var(--border2); }
+  .pill.amber { background: var(--amber-bg); color: var(--amber); border-color: rgba(184,124,16,0.25); }
+  .pill.green { background: var(--green-bg); color: var(--green); border-color: rgba(45,122,79,0.25); }
+  .pill.red   { background: var(--red-bg);   color: var(--red);   border-color: rgba(184,48,48,0.25); }
+  .pill-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+  .pill.amber .pill-dot { animation: pulse 1s infinite; }
+
+  /* ── Drop zone ── */
+  .drop {
+    border: 1.5px dashed var(--border2);
+    border-radius: 10px;
+    padding: 32px 20px;
+    text-align: center;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s;
+    background: var(--surface2);
+  }
+  .drop:hover, .drop.over { border-color: var(--accent); background: var(--accent-dim); }
+  .drop input  { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .drop p      { color: var(--muted); font-size: 12px; }
+  .drop strong { color: var(--text); }
+  #file-chip {
+    display: none;
+    margin-top: 10px;
+    background: var(--accent-dim);
+    color: var(--accent);
+    border: 1px solid var(--accent-border);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 11px;
+    word-break: break-all;
+  }
+
+  /* ── Model switcher ── */
+  .model-switcher {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .model-label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    flex-shrink: 0;
+  }
+  .model-tabs {
+    display: flex;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 9px;
+    padding: 3px;
+    gap: 3px;
+  }
+  .model-tab {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    padding: 6px 16px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .model-tab:hover { color: var(--text); }
+  .model-tab.active[data-model="qwen"] {
+    background: var(--qwen-bg);
+    color: var(--qwen);
+    border: 1px solid var(--qwen-border);
+    box-shadow: 0 1px 3px rgba(91,79,207,0.12);
+  }
+  .model-tab.active[data-model="llama"] {
+    background: var(--llama-bg);
+    color: var(--llama);
+    border: 1px solid var(--llama-border);
+    box-shadow: 0 1px 3px rgba(26,122,94,0.12);
+  }
+  .model-icon { font-size: 13px; }
+
+  /* model badge shown in answer card */
+  .model-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    margin-bottom: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .model-badge.qwen  { background: var(--qwen-bg);  color: var(--qwen);  border: 1px solid var(--qwen-border); }
+  .model-badge.llama { background: var(--llama-bg); color: var(--llama); border: 1px solid var(--llama-border); }
+
+  /* ── Answer ── */
+  #query-card  { display: none; }
+  #answer-card { display: none; }
+
+  .answer-body { background: var(--surface2); border-radius: 10px; padding: 20px 22px; }
+  .answer-text {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 17px;
+    line-height: 1.9;
+    color: var(--text);
+    white-space: pre-wrap;
+  }
+  .cite-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin: 14px 0 8px; }
+  .cite-tags  { display: flex; flex-wrap: wrap; gap: 6px; }
+  .cite-tag   {
+    font-size: 10px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: var(--accent-dim);
+    color: var(--accent);
+    border: 1px solid var(--accent-border);
+  }
+
+  /* ── Spinner ── */
+  .spin {
+    display: inline-block;
+    width: 10px; height: 10px;
+    border: 1.5px solid var(--border2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: rotate 0.6s linear infinite;
+  }
+
+  /* ── Animations ── */
+  @keyframes fadeDown { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes fadeUp   { from { opacity:0; transform:translateY(12px);  } to { opacity:1; transform:translateY(0); } }
+  @keyframes rotate   { to { transform:rotate(360deg); } }
+  @keyframes pulse    { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  @keyframes slideIn  { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+</style>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <div class="logo"><span class="logo-dot"></span>LexAI</div>
+    <div class="tagline">Constitutional Document Intelligence</div>
+  </header>
+
+  <div class="stack">
+
+    <!-- ── UPLOAD ── -->
+    <div class="card active" id="card-upload">
+      <div class="card-title">Upload documents</div>
+      <p style="font-size:11px;color:var(--muted);margin-bottom:14px">Upload both PDFs — they will be merged into one searchable index.</p>
+
+      <!-- English -->
+      <div style="margin-bottom:14px">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:6px">🇬🇧 English PDF</div>
+        <div class="drop" id="drop-en">
+          <input type="file" id="file-input-en" accept=".pdf"/>
+          <div style="font-size:20px;opacity:0.3;margin-bottom:6px">↑</div>
+          <p><strong>Drop English PDF</strong> or click to browse</p>
+        </div>
+        <div id="file-chip-en" style="display:none;margin-top:8px;background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent-border);border-radius:6px;padding:6px 12px;font-size:11px;word-break:break-all;"></div>
+        <button class="btn primary" id="upload-btn-en" style="width:100%;margin-top:8px" disabled>Index English PDF</button>
+        <div class="pill idle" id="pill-en" style="margin-top:8px"><span class="pill-dot"></span><span id="msg-en">No file selected</span></div>
+      </div>
+
+      <!-- Arabic -->
+      <div>
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:6px">🇪🇬 Arabic PDF</div>
+        <div class="drop" id="drop-ar">
+          <input type="file" id="file-input-ar" accept=".pdf"/>
+          <div style="font-size:20px;opacity:0.3;margin-bottom:6px">↑</div>
+          <p><strong>Drop Arabic PDF</strong> or click to browse</p>
+        </div>
+        <div id="file-chip-ar" style="display:none;margin-top:8px;background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent-border);border-radius:6px;padding:6px 12px;font-size:11px;word-break:break-all;"></div>
+        <button class="btn primary" id="upload-btn-ar" style="width:100%;margin-top:8px" disabled>Index Arabic PDF</button>
+        <div class="pill idle" id="pill-ar" style="margin-top:8px"><span class="pill-dot"></span><span id="msg-ar">No file selected</span></div>
+      </div>
+    </div>
+
+    <!-- ── QUERY ── hidden until upload done -->
+    <div class="card active" id="query-card">
+      <div class="card-title">Ask a question</div>
+
+      <!-- Model switcher -->
+      <div class="model-switcher">
+        <span class="model-label">Model</span>
+        <div class="model-tabs" role="group" aria-label="Model selection">
+          <button class="model-tab active" data-model="qwen" id="tab-qwen" title="Qwen3-32b — best for Arabic + multilingual RAG">
+            <span class="model-icon">🧠</span> Qwen
+          </button>
+          <button class="model-tab" data-model="llama" id="tab-llama" title="LLaMA 3.3-70b — best reasoning & summarisation">
+            <span class="model-icon">🦙</span> LLaMA
+          </button>
+        </div>
+      </div>
+
+      <div class="row">
+        <input type="text" class="query-input" id="query-input" placeholder="What does Article 15 say about…"/>
+        <button class="btn primary" id="ask-btn">Ask →</button>
+      </div>
+    </div>
+
+    <!-- ── ANSWER ── hidden until query done -->
+    <div class="card done" id="answer-card">
+      <div class="card-title">Answer</div>
+      <div class="answer-body">
+        <div id="model-badge-wrap"></div>
+        <div class="answer-text" id="answer-text"></div>
+        <div class="cite-label">Sources</div>
+        <div class="cite-tags" id="cite-tags"></div>
+      </div>
+    </div>
+
+  </div><!-- .stack -->
+</div><!-- .shell -->
+
+<script>
+  // ── API base URL — change if you expose via ngrok ────────────────────────
+  const API = "http://localhost:8000";
+
+  const $ = id => document.getElementById(id);
+
+  // ── Model state ───────────────────────────────────────────────────────────
+  let activeModel = "qwen";
+
+  document.querySelectorAll(".model-tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll(".model-tab").forEach(t => t.classList.remove("active"));
+      tab.classList.add("active");
+      activeModel = tab.dataset.model;
+    });
+  });
+
+  // ── Upload logic ──────────────────────────────────────────────────────────
+  function setupUpload({ dropId, inputId, chipId, btnId, pillId, msgId, endpoint }) {
+    const drop = $(dropId);
+    const input = $(inputId);
+    const chip  = $(chipId);
+    const btn   = $(btnId);
+    const msg   = $(msgId);
+    const pill  = $(pillId);
+    let file = null;
+
+    function setPill(state, text) {
+      pill.className = "pill " + state;
+      msg.textContent = text;
+    }
+
+    function applyFile(f) {
+      if (!f || f.type !== "application/pdf") return;
+      file = f;
+      chip.style.display = "block";
+      chip.textContent = "📄 " + f.name + " — " + (f.size / 1024).toFixed(0) + " KB";
+      btn.disabled = false;
+      setPill("amber", "Ready — click to index");
+    }
+
+    input.addEventListener("change", () => applyFile(input.files[0]));
+    drop.addEventListener("dragover",  e => { e.preventDefault(); drop.classList.add("over"); });
+    drop.addEventListener("dragleave", ()  => drop.classList.remove("over"));
+    drop.addEventListener("drop", e => { e.preventDefault(); drop.classList.remove("over"); applyFile(e.dataTransfer.files[0]); });
+
+    btn.addEventListener("click", async () => {
+      if (!file) return;
+      setPill("amber", "Uploading & indexing…");
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spin"></span> Processing…';
+
+      const fd = new FormData();
+      fd.append("file", file);
+
+      try {
+        const r = await fetch(API + endpoint, { method: "POST", body: fd });
+        if (!r.ok) {
+          const err = await r.json().catch(() => ({}));
+          throw new Error(err.detail || r.statusText);
+        }
+        const data = await r.json();
+        setPill("green", data.message);
+
+        // Show query card once at least one PDF is indexed
+        $("query-card").style.display = "block";
+        $("query-card").style.animation = "slideIn 0.4s ease both";
+        $("query-input").focus();
+
+      } catch(e) {
+        setPill("red", "Failed: " + e.message);
+      }
+
+      btn.disabled = false;
+      btn.textContent = btn.id.includes("en") ? "Index English PDF" : "Index Arabic PDF";
+    });
+  }
+
+  setupUpload({ dropId:"drop-en", inputId:"file-input-en", chipId:"file-chip-en", btnId:"upload-btn-en", pillId:"pill-en", msgId:"msg-en", endpoint:"/upload/english" });
+  setupUpload({ dropId:"drop-ar", inputId:"file-input-ar", chipId:"file-chip-ar", btnId:"upload-btn-ar", pillId:"pill-ar", msgId:"msg-ar", endpoint:"/upload/arabic"  });
+
+  // ── Query logic ───────────────────────────────────────────────────────────
+  async function ask() {
+    const q = $("query-input").value.trim();
+    if (!q) return;
+
+    $("ask-btn").innerHTML = '<span class="spin"></span>';
+    $("ask-btn").disabled = true;
+    $("answer-card").style.display = "none";
+
+    try {
+      const r = await fetch(API + "/query", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: q, model: activeModel, lang: "auto" }),
+      });
+
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({}));
+        throw new Error(err.detail || r.statusText);
+      }
+
+      const j = await r.json();
+
+      // model badge
+      const badge = document.createElement("span");
+      badge.className = "model-badge " + (j.model_used || activeModel);
+      const icons = { qwen: "🧠", llama: "🦙" };
+      badge.textContent = (icons[j.model_used] || "") + " " + (j.model_used || activeModel).toUpperCase();
+      $("model-badge-wrap").innerHTML = "";
+      $("model-badge-wrap").appendChild(badge);
+
+      $("answer-text").textContent = j.answer || "No answer returned.";
+
+      $("cite-tags").innerHTML = "";
+      (j.citations || []).forEach(c => {
+        const t = document.createElement("span");
+        t.className = "cite-tag";
+        t.textContent = c;
+        $("cite-tags").appendChild(t);
+      });
+
+      $("answer-card").style.display = "block";
+      $("answer-card").style.animation = "slideIn 0.4s ease both";
+
+    } catch(e) {
+      $("answer-text").textContent = "Error: " + e.message;
+      $("model-badge-wrap").innerHTML = "";
+      $("answer-card").style.display = "block";
+    }
+
+    $("ask-btn").textContent = "Ask →";
+    $("ask-btn").disabled = false;
+  }
+
+  $("ask-btn").addEventListener("click", ask);
+  $("query-input").addEventListener("keydown", e => { if (e.key === "Enter") ask(); });
+</script>
+</body>
+</html>
