@@ -1,0 +1,19 @@
+version: "3.9"
+
+services:
+  lexai:
+    build:
+      context: .           # builds from the "NLP Project\" folder
+      dockerfile: Dockerfile
+
+    image: lexai:latest
+    container_name: lexai_app
+
+    ports:
+      - "8000:8000"        # browser → http://localhost:8000
+
+    # Reads GROQ_API_KEY from the .env file in the same folder
+    env_file:
+      - .env
+
+    restart: unless-stopped
