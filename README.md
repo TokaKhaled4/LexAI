@@ -1,5 +1,5 @@
-# LexAI — Constitutional Document Intelligence
-A bilingual RAG (Retrieval-Augmented Generation) system that answers natural-language questions over Egypt's Constitution in Arabic and English. This project includes document parsing, semantic chunking, vector-based retrieval, cross-encoder reranking, and a FastAPI backend — deployed as an interactive web application.
+# LexAI : Constitutional Document Intelligence
+A bilingual RAG (Retrieval-Augmented Generation) system that answers natural-language questions over Egypt's Constitution in Arabic and English. This project includes document parsing, semantic chunking, vector-based retrieval, cross-encoder reranking, and a FastAPI backend deployed as an interactive web application.
 
 ## Overview
 Understanding constitutional law is complex and language-sensitive. Using Egypt's Constitution in both Arabic and English, this project aims to:
