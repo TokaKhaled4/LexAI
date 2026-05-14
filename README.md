@@ -9,9 +9,9 @@ Understanding constitutional law is complex and language-sensitive. Using Egypt'
 
 ## Dataset
 - **Source**: Egypt's Constitution (2014) — Arabic & English versions
-- **Arabic articles**: 223 chunks
-- **English articles**: 247 chunks
-- **Total indexed**: 470 article-level chunks
+- **Arabic articles**: 254 chunks
+- **English articles**: 254 chunks
+- **Total indexed**: 508 article-level chunks
 - **Chunk unit**: One constitutional article = one chunk
 
 ## Preprocessing Steps
